@@ -11,6 +11,9 @@ interface TokyoBuildingProps {
   rotationY?: number;
 }
 
+const BASE = import.meta.env?.BASE_URL || './';
+const MODEL_PATH = `${BASE.endsWith('/') ? BASE : BASE + '/'}models/building_interior/littlest_tokyo.glb`;
+
 export const ImportedTokyoBuilding: React.FC<TokyoBuildingProps> = ({
   position,
   rotationY = 0,
@@ -18,8 +21,8 @@ export const ImportedTokyoBuilding: React.FC<TokyoBuildingProps> = ({
   const setInspectedObject = useWorldStore((s) => s.setInspectedObject);
   const currentStreet = useWorldStore((s) => s.currentStreet);
 
-  // Load the Tokyo 3D Model
-  const { scene } = useGLTF('/models/building_interior/littlest_tokyo.glb');
+  // Load the Tokyo 3D Model with dynamic base URL support
+  const { scene } = useGLTF(MODEL_PATH);
 
   // Compute exact bounding box and scale to realistic multi-story architectural proportions
   const { modelGroup } = useMemo(() => {
@@ -118,4 +121,4 @@ export const ImportedTokyoBuilding: React.FC<TokyoBuildingProps> = ({
   );
 };
 
-useGLTF.preload('/models/building_interior/littlest_tokyo.glb');
+useGLTF.preload(MODEL_PATH);
