@@ -1,4 +1,6 @@
 import React, { useMemo } from 'react';
+import { useGLTF } from '@react-three/drei';
+import * as THREE from 'three';
 import { RigidBody } from '@react-three/rapier';
 import { useWorldStore } from '../../stores/useWorldStore';
 import { soundManager } from '../../audio/SoundManager';
@@ -8,10 +10,21 @@ interface VehicleProps {
   position: [number, number, number];
   rotationY: number;
   type: 'sedan' | 'suv' | 'bus' | 'taxi';
-  color?: string;
+  color: string;
 }
 
-export const VehicleMesh: React.FC<VehicleProps> = ({ position, rotationY, type, color = '#2563eb' }) => {
+const BASE = import.meta.env?.BASE_URL || './';
+const BASE_URL = BASE.endsWith('/') ? BASE : BASE + '/';
+
+const SPORTS_CAR_PATH = `${BASE_URL}models/vehicles/sports_car.glb`;
+const TRUCK_PATH = `${BASE_URL}models/vehicles/truck.glb`;
+
+export const VehicleMesh: React.FC<VehicleProps> = ({
+  position,
+  rotationY,
+  type,
+  color,
+}) => {
   const timeOfDay = useWorldStore((s) => s.timeOfDay);
   const setInspectedObject = useWorldStore((s) => s.setInspectedObject);
   const currentStreet = useWorldStore((s) => s.currentStreet);
@@ -19,81 +32,134 @@ export const VehicleMesh: React.FC<VehicleProps> = ({ position, rotationY, type,
   const isNight = timeOfDay === 'night';
   const isSunset = timeOfDay === 'sunset';
 
-  const isBus = type === 'bus';
-  const isSuv = type === 'suv';
+  const isTruckOrBus = type === 'bus';
   const isTaxi = type === 'taxi';
 
-  const bodyColor = isTaxi ? '#eab308' : color;
-  const length = isBus ? 10.5 : isSuv ? 4.8 : 4.4;
-  const width = isBus ? 2.6 : 1.9;
-  const height = isBus ? 2.8 : isSuv ? 1.6 : 1.35;
+  // Load 3D GLTF Model based on vehicle type
+  const sportsGltf = useGLTF(SPORTS_CAR_PATH);
+  const truckGltf = useGLTF(TRUCK_PATH);
 
+  const activeGltf = isTruckOrBus ? truckGltf : sportsGltf;
+
+  // Clone, scale, and apply realistic automotive paint materials
+  const { modelGroup, colliderSize } = useMemo(() => {
+    const cloned = activeGltf.scene.clone(true);
+
+    const actualColor = isTaxi ? '#eab308' : color;
+
+    // Premium Automotive Clearcoat Paint Material
+    const bodyMaterial = new THREE.MeshPhysicalMaterial({
+      color: actualColor,
+      metalness: 0.9,
+      roughness: 0.15,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.1,
+      reflectivity: 0.9,
+    });
+
+    const glassMaterial = new THREE.MeshPhysicalMaterial({
+      color: '#0f172a',
+      metalness: 0.1,
+      roughness: 0.05,
+      transmission: 0.8,
+      transparent: true,
+      opacity: 0.85,
+    });
+
+    cloned.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+
+        const matName = (child.material?.name || child.name || '').toLowerCase();
+
+        if (matName.includes('body') || matName.includes('paint') || matName.includes('car_paint') || matName.includes('red')) {
+          child.material = bodyMaterial;
+        } else if (matName.includes('glass') || matName.includes('window') || matName.includes('windshield')) {
+          child.material = glassMaterial;
+        }
+      }
+    });
+
+    // Compute bounding box and normalize to realistic dimensions
+    const bbox = new THREE.Box3().setFromObject(cloned);
+    const size = new THREE.Vector3();
+    bbox.getSize(size);
+    const center = new THREE.Vector3();
+    bbox.getCenter(center);
+
+    // Target Length: 4.6m for sports car, 7.5m for truck/bus
+    const TARGET_LENGTH = isTruckOrBus ? 7.5 : 4.6;
+    const rawLength = Math.max(size.x, size.z, 0.001);
+    const autoScale = TARGET_LENGTH / rawLength;
+
+    const group = new THREE.Group();
+    // Center squarely and align base at ground level Y=0
+    cloned.position.set(
+      -center.x * autoScale,
+      -bbox.min.y * autoScale,
+      -center.z * autoScale
+    );
+    cloned.scale.set(autoScale, autoScale, autoScale);
+    group.add(cloned);
+
+    const actualHeight = size.y * autoScale;
+    const actualWidth = Math.min(size.x, size.z) * autoScale;
+
+    return {
+      modelGroup: group,
+      colliderSize: [actualWidth * 0.9, actualHeight, TARGET_LENGTH * 0.9] as [number, number, number],
+    };
+  }, [activeGltf, isTruckOrBus, isTaxi, color]);
+
+  // Inspection Data for real 3D vehicles
   const inspectData: InspectableObject = useMemo(() => {
-    if (isBus) {
-      return {
-        id: `bus_${position[0]}_${position[2]}`,
-        title: "Mercedes-Benz Shahar Yo'lovchi Avtobusi",
-        category: 'vehicle',
-        badge: "JAMOAT TRANSPORTI",
-        description: `${currentStreet?.name || 'Markaziy ko\'cha'} bo'ylab qatnovchi 58-sonli shahar avtobusi. Zamonaviy konditsioner va elektron to'lov tizimi (ATTO) bilan jihozlangan.`,
-        streetName: currentStreet?.name,
-        details: [
-          { label: "Yo'nalish", value: "24-yo'nalish (Chorsu - Yunusobod)" },
-          { label: "Sig'imi", value: "85 yo'lovchi" },
-          { label: "Yoqilg'i turi", value: "CNG Siqilgan Tabiiy Gaz (Eco)" },
-          { label: "Tezlik", value: "45 km/soat" },
-          { label: "To'lov", value: "ATTO / NFC / QR-kod" },
-          { label: "Holati", value: "Marshrut bo'ylab harakatda" },
-        ],
-      };
-    } else if (isTaxi) {
+    if (isTaxi) {
       return {
         id: `taxi_${position[0]}_${position[2]}`,
-        title: "Toshkent City Rasmiy Taksisi",
+        title: "Yandex / Shahar Smart Taksisi (3D Model)",
         category: 'vehicle',
-        badge: "TAXI XIZMATI",
-        description: `Shahar bo'ylab yo'lovchi tashish xizmatini ko'rsatuvchi rasmiy sariq taksi. Yandex Go va mahalliy ilovalar orqali chaqirish mumkin.`,
+        badge: "AVTOMOBIL",
+        description: `${currentStreet?.name || "Markaziy ko'cha"} bo'ylab harakatlanuvchi zamonaviy shahar taksisi. Konditsioner, GPS monitoring va naqdsiz to'lov mavjud.`,
         streetName: currentStreet?.name,
         details: [
-          { label: "Model", value: "Chevrolet Cobalt / Onix" },
-          { label: "Tarif", value: "Standart / Komfort" },
+          { label: "Model", value: "Modern Sport Sedan (PBR 3D)" },
+          { label: "Tarif", value: "Komfort / Start 8,000 so'm" },
+          { label: "Dvigatel", value: "1.5L Turbo Hybrid (Evro-6)" },
           { label: "Holati", value: "Buyurtma kutmoqda" },
-          { label: "Konditsioner", value: "Mavjud" },
-          { label: "Haydovchi reytingi", value: "4.92 ★" },
-        ],
-      };
-    } else if (isSuv) {
-      return {
-        id: `suv_${position[0]}_${position[2]}`,
-        title: "Chevrolet Tracker / Trailblazer SUV",
-        category: 'vehicle',
-        badge: "SHAXSIY AVTOMOBIL",
-        description: `Kross-over toifasidagi zamonaviy shahar avtomobili. Yo'l chetida qisqa muddatli to'xtash joyiga (parking) qo'yilgan.`,
-        streetName: currentStreet?.name,
-        details: [
-          { label: "Kuzov turi", value: "Krossover (SUV)" },
-          { label: "Rang", value: color },
-          { label: "Dvigatel", value: "1.2L Turbo EcoTec" },
-          { label: "Parking", value: "Ruxsat etilgan zonada" },
-        ],
-      };
-    } else {
-      return {
-        id: `sedan_${position[0]}_${position[2]}`,
-        title: "Chevrolet Lacetti / Gentra Sedan",
-        category: 'vehicle',
-        badge: "SHAXSIY AVTOMOBIL",
-        description: `Toshkent ko'chalarida eng ommabop bo'lgan shinam shahar sedani.`,
-        streetName: currentStreet?.name,
-        details: [
-          { label: "Model", value: "Gentra 1.5 DOHC" },
-          { label: "Rang", value: color },
-          { label: "Uzatish qutisi", value: "Avtomat (6-bosqichli)" },
-          { label: "To'xtash holati", value: "Yo'l chetida" },
         ],
       };
     }
-  }, [isBus, isTaxi, isSuv, position, currentStreet?.name, color]);
+    if (isTruckOrBus) {
+      return {
+        id: `truck_${position[0]}_${position[2]}`,
+        title: "Xizmat Ko'rsatish Yuk Avtomobili (3D Model)",
+        category: 'vehicle',
+        badge: "MAXSUS TRANSPORT",
+        description: "Shahar do'konlari va savdo markazlariga tovar va mahsulotlarni yetkazib beruvchi maxsus logistika transporti.",
+        streetName: currentStreet?.name,
+        details: [
+          { label: "Model", value: "Cesium Logistics Heavy Truck" },
+          { label: "Yuk ko'tarish", value: "5.5 Tonna" },
+          { label: "Yoqilg'i turi", value: "Metan gaz / Dizel Evro-5" },
+        ],
+      };
+    }
+    return {
+      id: `car_${position[0]}_${position[2]}`,
+      title: "Premium Sport Sedan Avtomobili (3D Model)",
+      category: 'vehicle',
+      badge: "3D REAL MODEL",
+      description: `${currentStreet?.name || "Markaziy ko'cha"}da turgan fotorealistik metall qoplamali zamonaviy sport avtomobili.`,
+      streetName: currentStreet?.name,
+      details: [
+        { label: "Model", value: "V8 Twin-Turbo Sport Sedan" },
+        { label: "Tezlanish (0-100)", value: "3.4 soniya" },
+        { label: "Quvvat", value: "620 Ot kuchi (HP)" },
+        { label: "Rangi", value: color.toUpperCase() },
+      ],
+    };
+  }, [isTaxi, isTruckOrBus, position, currentStreet?.name, color]);
 
   const handleInspect = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
@@ -102,106 +168,81 @@ export const VehicleMesh: React.FC<VehicleProps> = ({ position, rotationY, type,
   };
 
   return (
-    <RigidBody type="fixed" colliders="cuboid" position={position} rotation={[0, rotationY, 0]}>
-      <group
+    <group position={position} rotation={[0, rotationY, 0]}>
+      {/* Solid Physics Vehicle Body */}
+      <RigidBody type="fixed" colliders="cuboid">
+        <mesh position={[0, colliderSize[1] / 2, 0]} visible={false}>
+          <boxGeometry args={[colliderSize[0], colliderSize[1], colliderSize[2]]} />
+        </mesh>
+      </RigidBody>
+
+      {/* Render Real 3D GLTF Vehicle Model */}
+      <primitive
+        object={modelGroup}
         userData={{ inspectData }}
         onClick={handleInspect}
-      >
-        {/* 1. Main Car / Bus Body Chassis */}
-        <mesh position={[0, height / 2 + 0.3, 0]} castShadow receiveShadow userData={{ inspectData }}>
-          <boxGeometry args={[width, height * 0.55, length]} />
-          <meshStandardMaterial color={bodyColor} roughness={0.3} metalness={0.7} />
-        </mesh>
+        onPointerOver={(e: { stopPropagation: () => void }) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
+      />
 
-        {/* 2. Cabin / Roof */}
-        {!isBus ? (
-          <mesh position={[0, height * 0.75 + 0.3, -0.2]} castShadow userData={{ inspectData }}>
-            <boxGeometry args={[width * 0.85, height * 0.5, length * 0.55]} />
-            <meshStandardMaterial color="#0f172a" roughness={0.1} metalness={0.9} />
+      {/* Taxi Roof Beacon Light */}
+      {isTaxi && (
+        <group position={[0, 1.45, 0]}>
+          <mesh>
+            <boxGeometry args={[0.5, 0.15, 0.2]} />
+            <meshStandardMaterial
+              color="#eab308"
+              emissive="#eab308"
+              emissiveIntensity={isNight ? 3 : 1}
+            />
           </mesh>
-        ) : (
-          <mesh position={[0, height * 0.65 + 0.3, 0]} userData={{ inspectData }}>
-            <boxGeometry args={[width * 0.96, height * 0.45, length * 0.9]} />
-            <meshStandardMaterial color="#1e293b" roughness={0.1} metalness={0.8} />
-          </mesh>
-        )}
+        </group>
+      )}
 
-        {/* Taxi Roof Sign */}
-        {isTaxi && (
-          <mesh position={[0, height + 0.4, 0]}>
-            <boxGeometry args={[0.6, 0.2, 0.3]} />
-            <meshStandardMaterial color="#ffffff" emissive="#fbbf24" emissiveIntensity={isNight ? 2 : 0.2} />
-          </mesh>
-        )}
-
-        {/* 3. Headlights */}
-        <mesh position={[-width * 0.35, 0.55, length / 2 + 0.02]}>
-          <boxGeometry args={[0.35, 0.2, 0.05]} />
-          <meshStandardMaterial
-            color={isNight || isSunset ? '#ffffff' : '#e2e8f0'}
-            emissive={isNight || isSunset ? '#ffffff' : '#000000'}
-            emissiveIntensity={isNight ? 3 : 0}
-          />
-        </mesh>
-        <mesh position={[width * 0.35, 0.55, length / 2 + 0.02]}>
-          <boxGeometry args={[0.35, 0.2, 0.05]} />
-          <meshStandardMaterial
-            color={isNight || isSunset ? '#ffffff' : '#e2e8f0'}
-            emissive={isNight || isSunset ? '#ffffff' : '#000000'}
-            emissiveIntensity={isNight ? 3 : 0}
-          />
-        </mesh>
-
-        {/* Night Headlight Beams */}
-        {isNight && (
+      {/* Dynamic Headlights Lighting System (Illuminates the road at night/sunset) */}
+      {(isNight || isSunset) && (
+        <>
+          {/* Left Headlight */}
           <spotLight
-            position={[0, 0.6, length / 2 + 0.2]}
-            target-position={[0, 0, length / 2 + 15]}
-            angle={0.6}
-            penumbra={0.5}
-            intensity={18}
-            distance={25}
-            color="#ffffff"
+            position={[-0.7, 0.6, colliderSize[2] / 2 + 0.2]}
+            target-position={[-0.7, 0, colliderSize[2] / 2 + 18]}
+            angle={0.4}
+            penumbra={0.4}
+            color="#fef08a"
+            intensity={isNight ? 35 : 18}
+            distance={30}
+            decay={2}
           />
-        )}
+          {/* Right Headlight */}
+          <spotLight
+            position={[0.7, 0.6, colliderSize[2] / 2 + 0.2]}
+            target-position={[0.7, 0, colliderSize[2] / 2 + 18]}
+            angle={0.4}
+            penumbra={0.4}
+            color="#fef08a"
+            intensity={isNight ? 35 : 18}
+            distance={30}
+            decay={2}
+          />
 
-        {/* 4. Taillights */}
-        <mesh position={[-width * 0.35, 0.55, -length / 2 - 0.02]}>
-          <boxGeometry args={[0.35, 0.18, 0.05]} />
-          <meshStandardMaterial
+          {/* Rear Red Taillights */}
+          <pointLight
+            position={[0, 0.65, -colliderSize[2] / 2 - 0.2]}
             color="#ef4444"
-            emissive="#ef4444"
-            emissiveIntensity={isNight ? 2.5 : 0.5}
+            intensity={isNight ? 12 : 5}
+            distance={10}
+            decay={2}
           />
-        </mesh>
-        <mesh position={[width * 0.35, 0.55, -length / 2 - 0.02]}>
-          <boxGeometry args={[0.35, 0.18, 0.05]} />
-          <meshStandardMaterial
-            color="#ef4444"
-            emissive="#ef4444"
-            emissiveIntensity={isNight ? 2.5 : 0.5}
-          />
-        </mesh>
-
-        {/* 5. 4 Wheels */}
-        {[
-          [-width / 2 - 0.05, 0.3, length * 0.3],
-          [width / 2 + 0.05, 0.3, length * 0.3],
-          [-width / 2 - 0.05, 0.3, -length * 0.3],
-          [width / 2 + 0.05, 0.3, -length * 0.3],
-        ].map((wPos, i) => (
-          <group key={i} position={[wPos[0], wPos[1], wPos[2]]} rotation={[0, 0, Math.PI / 2]}>
-            <mesh castShadow>
-              <cylinderGeometry args={[0.32, 0.32, 0.2, 16]} />
-              <meshStandardMaterial color="#0f172a" roughness={0.9} />
-            </mesh>
-            <mesh>
-              <cylinderGeometry args={[0.2, 0.2, 0.21, 12]} />
-              <meshStandardMaterial color="#cbd5e1" metalness={0.9} roughness={0.2} />
-            </mesh>
-          </group>
-        ))}
-      </group>
-    </RigidBody>
+        </>
+      )}
+    </group>
   );
 };
+
+useGLTF.preload(SPORTS_CAR_PATH);
+useGLTF.preload(TRUCK_PATH);
