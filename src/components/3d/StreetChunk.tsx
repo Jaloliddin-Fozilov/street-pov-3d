@@ -5,7 +5,6 @@ import { PropsMesh } from './PropsMesh';
 import { POIMarker } from './POIMarker';
 import { VehicleMesh } from './VehicleMesh';
 import { ImportedTokyoBuilding } from './ImportedTokyoBuilding';
-import { UzbekBibiKhanym } from './UzbekBibiKhanym';
 import { UzbekOliyMajlis } from './UzbekOliyMajlis';
 import { generateChunkBuildings } from '../../data/mockBuildings';
 import { getStreetByChunk, CHUNK_SIZE } from '../../data/streetsData';
@@ -24,8 +23,7 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
   const buildings = useMemo(() => generateChunkBuildings(chunkX, chunkZ), [chunkX, chunkZ]);
   const street = useMemo(() => getStreetByChunk(chunkX, chunkZ), [chunkX, chunkZ]);
 
-  // Distinct dedicated streets for each 3D model
-  const isBibiKhanymStreet = chunkX === 0 && chunkZ === 0;  // Amir Temur shox ko'chasi
+  // Distinct dedicated streets for custom 3D models
   const isOliyMajlisStreet = chunkX === 0 && chunkZ === 1;  // Islom Karimov shoh ko'chasi
   const isTokyoStreet = chunkX === 1 && chunkZ === 0;       // Osiyo ko'chasi (Xalqaro Kvartal)
 
@@ -40,7 +38,7 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
     }[] = [];
 
     // Place vehicles selectively
-    if (isBibiKhanymStreet || isOliyMajlisStreet || isTokyoStreet || seed % 2 === 0) {
+    if (isOliyMajlisStreet || isTokyoStreet || seed % 2 === 0) {
       vList.push({
         pos: [worldX + 3.2, 0, worldZ - 14],
         rotY: 0,
@@ -49,7 +47,7 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
       });
     }
 
-    if (isBibiKhanymStreet || isOliyMajlisStreet || isTokyoStreet || seed % 3 === 0) {
+    if (isOliyMajlisStreet || isTokyoStreet || seed % 3 === 0) {
       vList.push({
         pos: [worldX - 16, 0, worldZ - 3.2],
         rotY: -Math.PI / 2,
@@ -59,28 +57,17 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
     }
 
     return vList;
-  }, [chunkX, chunkZ, worldX, worldZ, isBibiKhanymStreet, isOliyMajlisStreet, isTokyoStreet]);
+  }, [chunkX, chunkZ, worldX, worldZ, isOliyMajlisStreet, isTokyoStreet]);
 
   return (
     <group key={`chunk-${chunkX}-${chunkZ}`}>
       {/* 1. Road Network, Sidewalks, Crosswalks */}
       <RoadNetworkMesh chunkX={chunkX} chunkZ={chunkZ} />
 
-      {/* 2. Standalone Dedicated 3D Landmarks on their own Distinct Streets */}
-      {isBibiKhanymStreet ? (
+      {/* 2. Standalone Dedicated 3D Landmarks on Distinct Streets */}
+      {isOliyMajlisStreet ? (
         <>
-          {/* Dedicated Street 1: Amir Temur ko'chasi -> Bibixonim Jome Masjidi */}
-          <UzbekBibiKhanym
-            position={[worldX + 24, 0, worldZ + 24]}
-            rotationY={0}
-          />
-          {buildings.slice(1).map((b) => (
-            <BuildingMesh key={b.id} building={b} />
-          ))}
-        </>
-      ) : isOliyMajlisStreet ? (
-        <>
-          {/* Dedicated Street 2: Islom Karimov ko'chasi -> Oliy Majlis Qonunchilik Palatasi Binosi */}
+          {/* Dedicated Street 1: Islom Karimov shoh ko'chasi -> Oliy Majlis Qonunchilik Palatasi Binosi */}
           <UzbekOliyMajlis
             position={[worldX + 24, 0, worldZ + 24]}
             rotationY={Math.PI / 2}
@@ -91,7 +78,7 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
         </>
       ) : isTokyoStreet ? (
         <>
-          {/* Dedicated Street 3: Osiyo ko'chasi -> Tokio Me'moriy Majmuasi */}
+          {/* Dedicated Street 2: Osiyo ko'chasi -> Tokio Me'moriy Majmuasi */}
           <ImportedTokyoBuilding
             position={[worldX + 24, 0, worldZ + 24]}
             rotationY={0}
