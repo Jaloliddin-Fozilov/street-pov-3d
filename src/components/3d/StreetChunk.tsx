@@ -24,9 +24,12 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
   const buildings = useMemo(() => generateChunkBuildings(chunkX, chunkZ), [chunkX, chunkZ]);
   const street = useMemo(() => getStreetByChunk(chunkX, chunkZ), [chunkX, chunkZ]);
 
-  const isCenterChunk = chunkX === 0 && chunkZ === 0;
+  // Distinct dedicated streets for each 3D model
+  const isBibiKhanymStreet = chunkX === 0 && chunkZ === 0;  // Amir Temur shox ko'chasi
+  const isOliyMajlisStreet = chunkX === 0 && chunkZ === 1;  // Islom Karimov shoh ko'chasi
+  const isTokyoStreet = chunkX === 1 && chunkZ === 0;       // Osiyo ko'chasi (Xalqaro Kvartal)
 
-  // Lightweight vehicle placement (avoids overloading scene with hundreds of cloned models)
+  // Lightweight vehicle placement
   const vehicles = useMemo(() => {
     const seed = Math.abs(chunkX * 9301 + chunkZ * 49297) % 233280;
     const vList: {
@@ -37,7 +40,7 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
     }[] = [];
 
     // Place vehicles selectively
-    if (isCenterChunk || seed % 2 === 0) {
+    if (isBibiKhanymStreet || isOliyMajlisStreet || isTokyoStreet || seed % 2 === 0) {
       vList.push({
         pos: [worldX + 3.2, 0, worldZ - 14],
         rotY: 0,
@@ -46,7 +49,7 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
       });
     }
 
-    if (isCenterChunk || seed % 3 === 0) {
+    if (isBibiKhanymStreet || isOliyMajlisStreet || isTokyoStreet || seed % 3 === 0) {
       vList.push({
         pos: [worldX - 16, 0, worldZ - 3.2],
         rotY: -Math.PI / 2,
@@ -56,40 +59,49 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
     }
 
     return vList;
-  }, [chunkX, chunkZ, worldX, worldZ, isCenterChunk]);
+  }, [chunkX, chunkZ, worldX, worldZ, isBibiKhanymStreet, isOliyMajlisStreet, isTokyoStreet]);
 
   return (
     <group key={`chunk-${chunkX}-${chunkZ}`}>
       {/* 1. Road Network, Sidewalks, Crosswalks */}
       <RoadNetworkMesh chunkX={chunkX} chunkZ={chunkZ} />
 
-      {/* 2. Monumental Uzbek & International 3D Architectural Models in Showcase Area */}
-      {isCenterChunk ? (
+      {/* 2. Standalone Dedicated 3D Landmarks on their own Distinct Streets */}
+      {isBibiKhanymStreet ? (
         <>
-          {/* A. Bibixonim Jome Masjidi (Samarqand 3D Monument) */}
+          {/* Dedicated Street 1: Amir Temur ko'chasi -> Bibixonim Jome Masjidi */}
           <UzbekBibiKhanym
             position={[worldX + 24, 0, worldZ + 24]}
             rotationY={0}
           />
-
-          {/* B. Oliy Majlis Qonunchilik Palatasi Binosi (Toshkent 3D Palace) */}
+          {buildings.slice(1).map((b) => (
+            <BuildingMesh key={b.id} building={b} />
+          ))}
+        </>
+      ) : isOliyMajlisStreet ? (
+        <>
+          {/* Dedicated Street 2: Islom Karimov ko'chasi -> Oliy Majlis Qonunchilik Palatasi Binosi */}
           <UzbekOliyMajlis
-            position={[worldX - 24, 0, worldZ + 24]}
+            position={[worldX + 24, 0, worldZ + 24]}
             rotationY={Math.PI / 2}
           />
-
-          {/* C. Tokyo Architectural Complex with Walkable Stairs */}
+          {buildings.slice(1).map((b) => (
+            <BuildingMesh key={b.id} building={b} />
+          ))}
+        </>
+      ) : isTokyoStreet ? (
+        <>
+          {/* Dedicated Street 3: Osiyo ko'chasi -> Tokio Me'moriy Majmuasi */}
           <ImportedTokyoBuilding
-            position={[worldX + 24, 0, worldZ - 24]}
+            position={[worldX + 24, 0, worldZ + 24]}
             rotationY={0}
           />
-
-          {/* D. Surrounding City Towers */}
-          {buildings.slice(3).map((b) => (
+          {buildings.slice(1).map((b) => (
             <BuildingMesh key={b.id} building={b} />
           ))}
         </>
       ) : (
+        /* Standard Procedural City Blocks for All Other 100+ Streets */
         buildings.map((b) => (
           <BuildingMesh key={b.id} building={b} />
         ))

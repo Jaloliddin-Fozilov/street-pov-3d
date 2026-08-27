@@ -5,11 +5,12 @@ export const CHUNK_SIZE = 80;
 
 // Generates 100+ structured, connected streets on a 10x10 to 12x10 interconnected road grid
 const rawStreetNames: { name: string; district: string; desc: string; hist: string }[] = [
-  { name: "Amir Temur shox ko'chasi", district: "Yunusobod", desc: "Toshkentning eng markaziy va qadimiy shoh ko'chalaridan biri.", hist: "19-asrdan boshlab rivojlangan, shahar markazidan shimolga tomon yo'nalgan." },
+  { name: "Amir Temur shox ko'chasi", district: "Yunusobod", desc: "Bibixonim jome masjidi maydoni va Toshkentning eng markaziy shoh ko'chasi.", hist: "19-asrdan boshlab rivojlangan, shahar markazidan shimolga tomon yo'nalgan." },
+  { name: "Islom Karimov shoh ko'chasi", district: "Mirobod", desc: "Oliy Majlis Qonunchilik Palatasi saroyi va davlat arxitekturasi xiyoboni.", hist: "O'zbekistonning zamonaviy davlat boshqaruvi markazlaridan biri." },
+  { name: "Osiyo ko'chasi (Xalqaro Kvartal)", district: "Yunusobod", desc: "Tokio me'moriy majmuasi, terrasalari va savdo galereyalari joylashgan ko'cha.", hist: "Yangi O'zbekistonning zamonaviy xalqaro arxitektura durdonasi." },
   { name: "Mustaqillik shoh ko'chasi", district: "Mirzo Ulug'bek", desc: "Keng xiyobonlar va ma'muriy binolar joylashgan ko'cha.", hist: "Mustaqillik maydoni bilan bog'langan eng mashhur shoh ko'cha." },
   { name: "Navoiy shoh ko'chasi", district: "Shayxontohur", desc: "Alisher Navoiy nomidagi teatr va qadimiy obidalar ko'chasi.", hist: "Toshkent madaniy hayotining tarixiy yuragi hisoblanadi." },
   { name: "Sharaf Rashidov ko'chasi", district: "Yunusobod", desc: "Markaziy bog'lar, muzeylar va kutubxonalar bo'ylab o'tadi.", hist: "Yashil xiyobonlari va tarixiy arxitekturasi bilan ajralib turadi." },
-  { name: "Islom Karimov ko'chasi", district: "Mirobod", desc: "Hukumat binolari va go'zal bog'lar joylashgan keng ko'cha.", hist: "O'zbekistonning zamonaviy davlat boshqaruvi markazlaridan biri." },
   { name: "Oybek ko'chasi", district: "Mirobod", desc: "Ko'plab kafelar, biznes markazlari va restoranlar joylashgan gavjum ko'cha.", hist: "Yozuvchi Muso Toshmuhammad o'g'li Oybek sharafiga nomlangan." },
   { name: "Nukus ko'chasi", district: "Mirobod", desc: "Elchixonalar va zamonaviy turar-joy majmualari joylashgan ko'cha.", hist: "Toshkentning Kichik halqa yo'li bilan bog'lovchi asosiy arteriyalardan biri." },
   { name: "Bobur ko'chasi", district: "Yakkasaroy", desc: "Do'stlik bog'i va aeroport yo'nalishidagi yashil ko'cha.", hist: "Zahiriddin Muhammad Bobur sharafiga atalgan." },
@@ -40,7 +41,6 @@ const rawStreetNames: { name: string; district: string; desc: string; hist: stri
   { name: "Glinka ko'chasi", district: "Yakkasaroy", desc: "Diplomatik vakolatxonalar va sokin villalar joylashgan ko'cha.", hist: "Musiqiy meros va madaniy maskanlar joylashgan xiyobon." },
   { name: "Yusuf Xos Hojib ko'chasi", district: "Yakkasaroy", desc: "Pedagogika universiteti va san'at kollejlari ko'chasi.", hist: "Qutadg'u Bilig asari muallifi Yusuf Xos Hojib nomi bilan atalgan." },
   { name: "Mahatma Gandi ko'chasi", district: "Mirzo Ulug'bek", desc: "Tarixiy bog'lar va xalqaro markazlar joylashgan xiyobon.", hist: "Hindiston yetakchisi Mahatma Gandi sharafiga do'stlik ramzi sifatida qo'yilgan." },
-  { name: "Osiyo ko'chasi", district: "Yunusobod", desc: "Zamonaviy IT-parklar va innovatsion binolar majmuasi.", hist: "Yangi O'zbekistonning zamonaviy arxitektura durdonasi." },
   { name: "Bog'ishamol ko'chasi", district: "Yunusobod", desc: "Botanika bog'i va Toshkent hayvonot bog'i joylashgan maskan.", hist: "Amir Temurning mashhur 'Bog'i Shamol' saroyi sharafiga nomlangan." },
   { name: "Chinobod ko'chasi", district: "Yunusobod", desc: "Sanatoriy va sog'lomlashtirish maskanlari joylashgan sokin ko'cha.", hist: "Shifobaxsh ma'danli suvlari bilan mashhur maskan." },
   { name: "Yunus Ota ko'chasi", district: "Yunusobod", desc: "Yunusobod tumanining tarixiy markaziy qismi.", hist: "Yunusxo'ja davriga borib taqaluvchi tarixiy ildizlarga ega." },
@@ -73,8 +73,47 @@ for (let gridX = -5; gridX < 5; gridX++) {
 
     const pois: POIData[] = [];
     
-    // Add distinct POIs to some streets
-    if ((gridX + gridZ) % 2 === 0) {
+    // Special Landmark POIs for dedicated streets
+    if (gridX === 0 && gridZ === 0) {
+      pois.push({
+        id: `poi_bibi_khanym`,
+        name: "Bibixonim Jome Masjidi",
+        category: 'landmark',
+        description: "XIV asr me'moriy durdonasi, Amir Temur tomonidan barpo etilgan ulug'vor moviy gumbazli jome masjidi.",
+        fullHistory: "1399-1404 yillarda bunyod etilgan. O'rta asrlar sharq me'morchiligining eng yuksak cho'qqilaridan biri.",
+        position: [worldX + 24, 0, worldZ + 24],
+        streetId: streetId,
+        hours: "08:00 - 20:00",
+        rating: 5.0,
+        imageUrl: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=600&q=80"
+      });
+    } else if (gridX === 0 && gridZ === 1) {
+      pois.push({
+        id: `poi_oliy_majlis`,
+        name: "Oliy Majlis Qonunchilik Palatasi Binosi",
+        category: 'government',
+        description: "O'zbekiston Respublikasi parlamenti va qonun chiqaruvchi oliy organi saroyi.",
+        fullHistory: "Oq marmar ustunlar va zangori gumbaz uyg'unligida barpo etilgan zamonaviy davlat arxitekturasi.",
+        position: [worldX + 24, 0, worldZ + 24],
+        streetId: streetId,
+        hours: "09:00 - 18:00",
+        rating: 4.9,
+        imageUrl: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=600&q=80"
+      });
+    } else if (gridX === 1 && gridZ === 0) {
+      pois.push({
+        id: `poi_tokyo_complex`,
+        name: "Tokio Me'moriy Majmuasi",
+        category: 'landmark',
+        description: "Ko'p qavatli terrasalari, do'konlari va zinapoyalariga piyoda ko'tarilish mumkin bo'lgan me'moriy shahar majmuasi.",
+        fullHistory: "Zamonaviy arxitektura va 3D visual san'at ko'rgazmasi binosi.",
+        position: [worldX + 24, 0, worldZ + 24],
+        streetId: streetId,
+        hours: "10:00 - 22:00",
+        rating: 4.9,
+        imageUrl: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80"
+      });
+    } else if ((gridX + gridZ) % 2 === 0) {
       const categories: POIData['category'][] = ['landmark', 'cafe', 'shop', 'government', 'park', 'historical'];
       const cat = categories[Math.abs(gridX * 3 + gridZ * 7) % categories.length];
       
@@ -89,21 +128,6 @@ for (let gridX = -5; gridX < 5; gridX++) {
         hours: "08:00 - 23:00",
         rating: 4.8,
         imageUrl: "https://images.unsplash.com/photo-1519501025264-65ba15a82390?auto=format&fit=crop&w=600&q=80"
-      });
-    }
-
-    if (Math.abs(gridX) === 1 && Math.abs(gridZ) === 1) {
-      pois.push({
-        id: `poi_${streetId}_cafe`,
-        name: "Shinam Kofe & Qahvaxona",
-        category: "cafe",
-        description: "Issiq qahva, yangi pishiriqlar va shinam muhitga ega qahvaxona.",
-        fullHistory: "Shaharning zamonaviy yoshlari uchun qulay muhitga ega dam olish va frilans maskani.",
-        position: [worldX - 14, 0, worldZ - 12],
-        streetId: streetId,
-        hours: "07:30 - 00:00",
-        rating: 4.9,
-        imageUrl: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80"
       });
     }
 
