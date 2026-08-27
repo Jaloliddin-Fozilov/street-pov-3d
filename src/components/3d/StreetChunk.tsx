@@ -5,6 +5,8 @@ import { PropsMesh } from './PropsMesh';
 import { POIMarker } from './POIMarker';
 import { VehicleMesh } from './VehicleMesh';
 import { ImportedTokyoBuilding } from './ImportedTokyoBuilding';
+import { UzbekBibiKhanym } from './UzbekBibiKhanym';
+import { UzbekOliyMajlis } from './UzbekOliyMajlis';
 import { generateChunkBuildings } from '../../data/mockBuildings';
 import { getStreetByChunk, CHUNK_SIZE } from '../../data/streetsData';
 
@@ -71,17 +73,29 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
       {/* 1. Road Network, Sidewalks, Crosswalks */}
       <RoadNetworkMesh chunkX={chunkX} chunkZ={chunkZ} />
 
-      {/* 2. Imported Tokyo Complex placed straight and parallel on the corner plot */}
+      {/* 2. Monumental Uzbek & International 3D Architectural Models in Showcase Area */}
       {isCenterChunk ? (
         <>
-          {/* Imported 3D Tokyo Building (Aligned with sidewalk and road grid) */}
-          <ImportedTokyoBuilding
+          {/* A. Bibixonim Jome Masjidi (Samarqand 3D Monument) */}
+          <UzbekBibiKhanym
             position={[worldX + 24, 0, worldZ + 24]}
             rotationY={0}
           />
 
-          {/* Procedural surrounding city buildings */}
-          {buildings.slice(1).map((b) => (
+          {/* B. Oliy Majlis Qonunchilik Palatasi Binosi (Toshkent 3D Palace) */}
+          <UzbekOliyMajlis
+            position={[worldX - 24, 0, worldZ + 24]}
+            rotationY={Math.PI / 2}
+          />
+
+          {/* C. Tokyo Architectural Complex with Walkable Stairs */}
+          <ImportedTokyoBuilding
+            position={[worldX + 24, 0, worldZ - 24]}
+            rotationY={0}
+          />
+
+          {/* D. Surrounding City Towers */}
+          {buildings.slice(3).map((b) => (
             <BuildingMesh key={b.id} building={b} />
           ))}
         </>
