@@ -16,9 +16,9 @@ export const EnvironmentSky: React.FC = () => {
   useFrame(() => {
     if (dirLightRef.current) {
       dirLightRef.current.position.set(
-        playerPosition[0] + (timeOfDay === 'sunset' ? 40 : 30),
-        timeOfDay === 'night' ? 20 : 60,
-        playerPosition[2] + (timeOfDay === 'sunset' ? 10 : 30)
+        playerPosition[0] + (timeOfDay === 'sunset' ? 35 : 25),
+        timeOfDay === 'night' ? 20 : 50,
+        playerPosition[2] + (timeOfDay === 'sunset' ? 10 : 25)
       );
       dirLightRef.current.target.position.set(
         playerPosition[0],
@@ -32,7 +32,7 @@ export const EnvironmentSky: React.FC = () => {
   // Calculate parameters based on timeOfDay
   let sunPosition: [number, number, number] = [100, 40, 100];
   let dirColor = '#ffffff';
-  let dirIntensity = 1.6;
+  let dirIntensity = 1.5;
   let ambColor = '#94a3b8';
   let ambIntensity = 0.6;
   let fogColor = '#cbd5e1';
@@ -44,7 +44,7 @@ export const EnvironmentSky: React.FC = () => {
   if (timeOfDay === 'sunset') {
     sunPosition = [100, 4, 20];
     dirColor = '#fdba74';
-    dirIntensity = 1.4;
+    dirIntensity = 1.3;
     ambColor = '#ea580c';
     ambIntensity = 0.5;
     fogColor = '#c2410c';
@@ -65,7 +65,7 @@ export const EnvironmentSky: React.FC = () => {
     <>
       {/* 1. Atmospheric Fog */}
       <color attach="background" args={[fogColor]} />
-      <fog attach="fog" args={[fogColor, 40, 220]} />
+      <fog attach="fog" args={[fogColor, 40, 200]} />
 
       {/* 2. Procedural Sky / Atmosphere */}
       <Sky
@@ -77,9 +77,9 @@ export const EnvironmentSky: React.FC = () => {
         mieDirectionalG={mieDirectionalG}
       />
 
-      {/* 3. Night Stars */}
+      {/* 3. Night Stars (Optimized count) */}
       {timeOfDay === 'night' && (
-        <Stars radius={100} depth={50} count={3000} factor={4} saturation={0} fade speed={1} />
+        <Stars radius={100} depth={50} count={1200} factor={3} saturation={0} fade speed={1} />
       )}
 
       {/* 4. Ambient & Hemisphere Lighting */}
@@ -92,20 +92,20 @@ export const EnvironmentSky: React.FC = () => {
         ]}
       />
 
-      {/* 5. Directional Sunlight / Moonlight with Dynamic Shadows */}
+      {/* 5. Directional Sunlight / Moonlight with 1024 Fast Shadow Map */}
       <directionalLight
         ref={dirLightRef}
         castShadow={shadows && timeOfDay !== 'night'}
         color={dirColor}
         intensity={dirIntensity}
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
         shadow-camera-near={0.5}
-        shadow-camera-far={150}
-        shadow-camera-left={-40}
-        shadow-camera-right={40}
-        shadow-camera-top={40}
-        shadow-camera-bottom={-40}
+        shadow-camera-far={120}
+        shadow-camera-left={-35}
+        shadow-camera-right={35}
+        shadow-camera-top={35}
+        shadow-camera-bottom={-35}
         shadow-bias={-0.0005}
       />
     </>

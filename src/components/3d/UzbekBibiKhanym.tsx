@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { RigidBody } from '@react-three/rapier';
+import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { useWorldStore } from '../../stores/useWorldStore';
 import { soundManager } from '../../audio/SoundManager';
 import { InspectableObject } from '../../types';
@@ -21,10 +21,6 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
 }) => {
   const setInspectedObject = useWorldStore((s) => s.setInspectedObject);
   const currentStreet = useWorldStore((s) => s.currentStreet);
-  const timeOfDay = useWorldStore((s) => s.timeOfDay);
-
-  const isNight = timeOfDay === 'night';
-  const isSunset = timeOfDay === 'sunset';
 
   const { scene } = useGLTF(MODEL_PATH);
 
@@ -44,7 +40,7 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
     const center = new THREE.Vector3();
     bbox.getCenter(center);
 
-    // Target Height: 24 meters (Grand monumental scale)
+    // Target Height: 24 meters
     const TARGET_HEIGHT = 24.0;
     const rawHeight = size.y > 0.001 ? size.y : 1;
     const autoScale = TARGET_HEIGHT / rawHeight;
@@ -85,41 +81,34 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      {/* Exact Trimesh physics collider so player can walk under the grand arch and into the courtyard */}
-      <RigidBody type="fixed" colliders="trimesh">
-        <primitive
-          object={modelGroup}
-          userData={{ inspectData }}
-          onClick={handleInspect}
-          onPointerOver={(e: { stopPropagation: () => void }) => {
-            e.stopPropagation();
-            document.body.style.cursor = 'pointer';
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = 'auto';
-          }}
-        />
+      {/* 
+        High-Performance Compound Cuboid Colliders 
+        (Allows walk-through archway without 100k polygon trimesh lag)
+      */}
+      <RigidBody type="fixed" colliders={false}>
+        {/* Left Portal Pylon Pillar */}
+        <CuboidCollider args={[3.2, 12, 4]} position={[-9, 12, 0]} />
+        {/* Right Portal Pylon Pillar */}
+        <CuboidCollider args={[3.2, 12, 4]} position={[9, 12, 0]} />
+        {/* Arch Header Above Walkway */}
+        <CuboidCollider args={[5.8, 4, 3]} position={[0, 20, 0]} />
+        {/* Back Dome & Mosque Body */}
+        <CuboidCollider args={[14, 12, 8]} position={[0, 12, -12]} />
       </RigidBody>
 
-      {/* Atmospheric Monument Illumination at Sunset & Night */}
-      {(isNight || isSunset) && (
-        <>
-          <pointLight
-            position={[0, 12, 10]}
-            color={isNight ? '#38bdf8' : '#f59e0b'}
-            intensity={isNight ? 45 : 20}
-            distance={40}
-            decay={2}
-          />
-          <pointLight
-            position={[0, 18, -8]}
-            color="#38bdf8"
-            intensity={isNight ? 35 : 15}
-            distance={35}
-            decay={2}
-          />
-        </>
-      )}
+      {/* Render 3D Monument */}
+      <primitive
+        object={modelGroup}
+        userData={{ inspectData }}
+        onClick={handleInspect}
+        onPointerOver={(e: { stopPropagation: () => void }) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
+      />
     </group>
   );
 };

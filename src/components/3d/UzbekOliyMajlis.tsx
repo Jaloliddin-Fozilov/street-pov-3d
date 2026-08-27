@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { RigidBody } from '@react-three/rapier';
+import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { useWorldStore } from '../../stores/useWorldStore';
 import { soundManager } from '../../audio/SoundManager';
 import { InspectableObject } from '../../types';
@@ -21,10 +21,6 @@ export const UzbekOliyMajlis: React.FC<OliyMajlisProps> = ({
 }) => {
   const setInspectedObject = useWorldStore((s) => s.setInspectedObject);
   const currentStreet = useWorldStore((s) => s.currentStreet);
-  const timeOfDay = useWorldStore((s) => s.timeOfDay);
-
-  const isNight = timeOfDay === 'night';
-  const isSunset = timeOfDay === 'sunset';
 
   const { scene } = useGLTF(MODEL_PATH);
 
@@ -85,43 +81,27 @@ export const UzbekOliyMajlis: React.FC<OliyMajlisProps> = ({
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      {/* Exact Trimesh physics collider for palace stairs and columns */}
-      <RigidBody type="fixed" colliders="trimesh">
-        <primitive
-          object={modelGroup}
-          userData={{ inspectData }}
-          onClick={handleInspect}
-          onPointerOver={(e: { stopPropagation: () => void }) => {
-            e.stopPropagation();
-            document.body.style.cursor = 'pointer';
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = 'auto';
-          }}
-        />
+      {/* Lightweight Compound Physics Collider */}
+      <RigidBody type="fixed" colliders={false}>
+        {/* Main Central Palace Block */}
+        <CuboidCollider args={[16, 9, 10]} position={[0, 9, 0]} />
+        {/* Front Entrance Steps */}
+        <CuboidCollider args={[12, 1.2, 4]} position={[0, 1.2, 10]} />
       </RigidBody>
 
-      {/* Grand Architectural Spotlighting */}
-      {(isNight || isSunset) && (
-        <>
-          <spotLight
-            position={[0, 22, 16]}
-            target-position={[0, 8, 0]}
-            color={isNight ? '#ffffff' : '#fed7aa'}
-            intensity={isNight ? 50 : 25}
-            distance={45}
-            angle={0.6}
-            penumbra={0.5}
-          />
-          <pointLight
-            position={[0, 16, 0]}
-            color="#38bdf8"
-            intensity={isNight ? 30 : 12}
-            distance={28}
-            decay={2}
-          />
-        </>
-      )}
+      {/* Render 3D Palace */}
+      <primitive
+        object={modelGroup}
+        userData={{ inspectData }}
+        onClick={handleInspect}
+        onPointerOver={(e: { stopPropagation: () => void }) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
+      />
     </group>
   );
 };

@@ -108,14 +108,14 @@ export const PropsMesh: React.FC<PropsMeshProps> = ({ chunkX, chunkZ }) => {
           onClick={(e) => { e.stopPropagation(); soundManager.playClick(); setInspectedObject(lampData); }}
         >
           <RigidBody type="fixed" colliders="cuboid">
-            <mesh position={[0, 2.8, 0]} castShadow userData={{ inspectData: lampData }}>
-              <cylinderGeometry args={[0.09, 0.14, 5.6, 8]} />
+            <mesh position={[0, 2.8, 0]} userData={{ inspectData: lampData }}>
+              <cylinderGeometry args={[0.09, 0.14, 5.6, 6]} />
               <meshStandardMaterial color="#1e293b" metalness={0.8} roughness={0.3} />
             </mesh>
           </RigidBody>
 
           <mesh position={[pos[0] > worldX ? -0.4 : 0.4, 5.4, 0]} rotation={[0, 0, pos[0] > worldX ? 0.35 : -0.35]}>
-            <cylinderGeometry args={[0.07, 0.07, 1.2, 8]} />
+            <cylinderGeometry args={[0.07, 0.07, 1.2, 6]} />
             <meshStandardMaterial color="#1e293b" metalness={0.8} />
           </mesh>
 
@@ -124,16 +124,17 @@ export const PropsMesh: React.FC<PropsMeshProps> = ({ chunkX, chunkZ }) => {
             <meshStandardMaterial
               color={isNight || isSunset ? '#fef08a' : '#e2e8f0'}
               emissive={isNight ? '#fef08a' : isSunset ? '#fdba74' : '#000000'}
-              emissiveIntensity={isNight ? 3.0 : isSunset ? 1.5 : 0}
+              emissiveIntensity={isNight ? 2.5 : isSunset ? 1.2 : 0}
             />
           </mesh>
 
-          {(isNight || isSunset) && idx < 4 && (
+          {/* Only 1 subtle point light per chunk for maximum 60 FPS performance */}
+          {(isNight || isSunset) && idx === 0 && (
             <pointLight
               position={[pos[0] > worldX ? -0.8 : 0.8, 5.2, 0]}
               color={isNight ? '#fef08a' : '#fed7aa'}
-              intensity={isNight ? 30 : 15}
-              distance={25}
+              intensity={isNight ? 18 : 8}
+              distance={22}
               decay={2}
             />
           )}
@@ -185,18 +186,18 @@ export const PropsMesh: React.FC<PropsMeshProps> = ({ chunkX, chunkZ }) => {
           onClick={(e) => { e.stopPropagation(); soundManager.playClick(); setInspectedObject(treeData); }}
         >
           <RigidBody type="fixed" colliders="hull">
-            <mesh position={[0, 1.6, 0]} castShadow userData={{ inspectData: treeData }}>
-              <cylinderGeometry args={[0.18, 0.28, 3.2, 8]} />
+            <mesh position={[0, 1.6, 0]} userData={{ inspectData: treeData }}>
+              <cylinderGeometry args={[0.18, 0.28, 3.2, 6]} />
               <meshStandardMaterial color="#451a03" roughness={0.9} />
             </mesh>
           </RigidBody>
 
-          <mesh position={[0, 4.0, 0]} castShadow userData={{ inspectData: treeData }}>
-            <dodecahedronGeometry args={[1.8, 1]} />
+          <mesh position={[0, 4.0, 0]} userData={{ inspectData: treeData }}>
+            <dodecahedronGeometry args={[1.8, 0]} />
             <meshStandardMaterial color={idx % 2 === 0 ? '#15803d' : '#166534'} roughness={0.8} />
           </mesh>
-          <mesh position={[0, 5.1, 0]} castShadow userData={{ inspectData: treeData }}>
-            <dodecahedronGeometry args={[1.3, 1]} />
+          <mesh position={[0, 5.1, 0]} userData={{ inspectData: treeData }}>
+            <dodecahedronGeometry args={[1.3, 0]} />
             <meshStandardMaterial color="#22c55e" roughness={0.8} />
           </mesh>
         </group>
@@ -206,11 +207,11 @@ export const PropsMesh: React.FC<PropsMeshProps> = ({ chunkX, chunkZ }) => {
       {bollardPositions.map((pos, idx) => (
         <RigidBody key={`bollard-${idx}`} type="fixed" colliders="cuboid" position={pos}>
           <mesh position={[0, 0.45, 0]}>
-            <cylinderGeometry args={[0.08, 0.08, 0.9, 8]} />
+            <cylinderGeometry args={[0.08, 0.08, 0.9, 6]} />
             <meshStandardMaterial color="#64748b" metalness={0.9} roughness={0.2} />
           </mesh>
           <mesh position={[0, 0.8, 0]}>
-            <cylinderGeometry args={[0.085, 0.085, 0.1, 8]} />
+            <cylinderGeometry args={[0.085, 0.085, 0.1, 6]} />
             <meshStandardMaterial color="#ffffff" emissive="#ffffff" emissiveIntensity={isNight ? 1.5 : 0.2} />
           </mesh>
         </RigidBody>
@@ -220,15 +221,15 @@ export const PropsMesh: React.FC<PropsMeshProps> = ({ chunkX, chunkZ }) => {
       <RigidBody type="fixed" colliders="cuboid" position={[worldX + 8.2, 0.16, worldZ - 14]}>
         <group>
           <mesh position={[0, 0.35, 0]}>
-            <cylinderGeometry args={[0.14, 0.16, 0.7, 8]} />
+            <cylinderGeometry args={[0.14, 0.16, 0.7, 6]} />
             <meshStandardMaterial color="#dc2626" roughness={0.4} metalness={0.6} />
           </mesh>
           <mesh position={[0, 0.75, 0]}>
-            <sphereGeometry args={[0.16, 8, 8]} />
+            <sphereGeometry args={[0.16, 6, 6]} />
             <meshStandardMaterial color="#dc2626" roughness={0.4} metalness={0.6} />
           </mesh>
           <mesh position={[0, 0.45, 0]} rotation={[0, 0, Math.PI / 2]}>
-            <cylinderGeometry args={[0.08, 0.08, 0.45, 8]} />
+            <cylinderGeometry args={[0.08, 0.08, 0.45, 6]} />
             <meshStandardMaterial color="#e2e8f0" metalness={0.9} />
           </mesh>
         </group>

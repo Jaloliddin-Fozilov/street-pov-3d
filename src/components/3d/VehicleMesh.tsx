@@ -47,28 +47,24 @@ export const VehicleMesh: React.FC<VehicleProps> = ({
 
     const actualColor = isTaxi ? '#eab308' : color;
 
-    // Premium Automotive Clearcoat Paint Material
-    const bodyMaterial = new THREE.MeshPhysicalMaterial({
+    // Fast, lightweight Automotive Paint Material
+    const bodyMaterial = new THREE.MeshStandardMaterial({
       color: actualColor,
-      metalness: 0.9,
-      roughness: 0.15,
-      clearcoat: 1.0,
-      clearcoatRoughness: 0.1,
-      reflectivity: 0.9,
+      metalness: 0.8,
+      roughness: 0.2,
     });
 
-    const glassMaterial = new THREE.MeshPhysicalMaterial({
+    const glassMaterial = new THREE.MeshStandardMaterial({
       color: '#0f172a',
-      metalness: 0.1,
-      roughness: 0.05,
-      transmission: 0.8,
+      metalness: 0.2,
+      roughness: 0.1,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.8,
     });
 
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        child.castShadow = true;
+        child.castShadow = false; // Disable expensive per-car dynamic shadow calculation for high FPS
         child.receiveShadow = true;
 
         const matName = (child.material?.name || child.name || '').toLowerCase();
@@ -88,13 +84,11 @@ export const VehicleMesh: React.FC<VehicleProps> = ({
     const center = new THREE.Vector3();
     bbox.getCenter(center);
 
-    // Target Length: 4.6m for sports car, 7.5m for truck/bus
     const TARGET_LENGTH = isTruckOrBus ? 7.5 : 4.6;
     const rawLength = Math.max(size.x, size.z, 0.001);
     const autoScale = TARGET_LENGTH / rawLength;
 
     const group = new THREE.Group();
-    // Center squarely and align base at ground level Y=0
     cloned.position.set(
       -center.x * autoScale,
       -bbox.min.y * autoScale,
@@ -198,47 +192,24 @@ export const VehicleMesh: React.FC<VehicleProps> = ({
             <meshStandardMaterial
               color="#eab308"
               emissive="#eab308"
-              emissiveIntensity={isNight ? 3 : 1}
+              emissiveIntensity={isNight ? 2 : 0.8}
             />
           </mesh>
         </group>
       )}
 
-      {/* Dynamic Headlights Lighting System (Illuminates the road at night/sunset) */}
+      {/* Lightweight Emissive Headlights at Night/Sunset (Zero dynamic light overhead) */}
       {(isNight || isSunset) && (
-        <>
-          {/* Left Headlight */}
-          <spotLight
-            position={[-0.7, 0.6, colliderSize[2] / 2 + 0.2]}
-            target-position={[-0.7, 0, colliderSize[2] / 2 + 18]}
-            angle={0.4}
-            penumbra={0.4}
-            color="#fef08a"
-            intensity={isNight ? 35 : 18}
-            distance={30}
-            decay={2}
-          />
-          {/* Right Headlight */}
-          <spotLight
-            position={[0.7, 0.6, colliderSize[2] / 2 + 0.2]}
-            target-position={[0.7, 0, colliderSize[2] / 2 + 18]}
-            angle={0.4}
-            penumbra={0.4}
-            color="#fef08a"
-            intensity={isNight ? 35 : 18}
-            distance={30}
-            decay={2}
-          />
-
-          {/* Rear Red Taillights */}
-          <pointLight
-            position={[0, 0.65, -colliderSize[2] / 2 - 0.2]}
-            color="#ef4444"
-            intensity={isNight ? 12 : 5}
-            distance={10}
-            decay={2}
-          />
-        </>
+        <group position={[0, 0.6, colliderSize[2] / 2]}>
+          <mesh position={[-0.6, 0, 0]}>
+            <sphereGeometry args={[0.1, 8, 8]} />
+            <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={3} />
+          </mesh>
+          <mesh position={[0.6, 0, 0]}>
+            <sphereGeometry args={[0.1, 8, 8]} />
+            <meshStandardMaterial color="#fef08a" emissive="#fef08a" emissiveIntensity={3} />
+          </mesh>
+        </group>
       )}
     </group>
   );

@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
-import { RigidBody } from '@react-three/rapier';
+import { RigidBody, CuboidCollider } from '@react-three/rapier';
 import { useWorldStore } from '../../stores/useWorldStore';
 import { soundManager } from '../../audio/SoundManager';
 import { InspectableObject } from '../../types';
@@ -12,7 +12,8 @@ interface TokyoBuildingProps {
 }
 
 const BASE = import.meta.env?.BASE_URL || './';
-const MODEL_PATH = `${BASE.endsWith('/') ? BASE : BASE + '/'}models/building_interior/littlest_tokyo.glb`;
+const BASE_URL = BASE.endsWith('/') ? BASE : BASE + '/';
+const MODEL_PATH = `${BASE_URL}models/building_interior/littlest_tokyo.glb`;
 
 export const ImportedTokyoBuilding: React.FC<TokyoBuildingProps> = ({
   position,
@@ -84,39 +85,33 @@ export const ImportedTokyoBuilding: React.FC<TokyoBuildingProps> = ({
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
       {/* 
-        Exact physics trimesh collider for the entire Tokyo building 
-        (platforms, walls, bridges, and floors)
+        High-Speed Lightweight Physics Colliders
       */}
-      <RigidBody type="fixed" colliders="trimesh">
-        <primitive
-          object={modelGroup}
-          userData={{ inspectData }}
-          onClick={handleInspect}
-          onPointerOver={(e: { stopPropagation: () => void }) => {
-            e.stopPropagation();
-            document.body.style.cursor = 'pointer';
-          }}
-          onPointerOut={() => {
-            document.body.style.cursor = 'auto';
-          }}
-        />
+      <RigidBody type="fixed" colliders={false}>
+        {/* Main Base & Ground Shops */}
+        <CuboidCollider args={[6.5, 2.5, 6.5]} position={[0, 2.5, 0]} />
+        {/* 2nd Tier Platform Floor */}
+        <CuboidCollider args={[5.5, 0.2, 5.5]} position={[0, 5.0, 0]} />
+        {/* 2nd Tier Tower */}
+        <CuboidCollider args={[4.5, 3.5, 4.5]} position={[0, 8.5, 0]} />
+        {/* Staircase Incline Ramp */}
+        <CuboidCollider args={[1.2, 0.15, 3.0]} position={[1.5, 2.5, 4.0]} rotation={[-0.55, 0, 0]} />
+        {/* Upper Staircase Ramp */}
+        <CuboidCollider args={[3.0, 0.15, 1.2]} position={[-3.2, 3.8, 1.0]} rotation={[0, 0, 0.55]} />
       </RigidBody>
 
-      {/* 
-        Smooth Stair Ramps for effortless ascending and descending 
-        without step catching
-      */}
-      <RigidBody type="fixed" colliders="cuboid" position={[1.5, 1.8, 4.2]} rotation={[-0.55, 0, 0]}>
-        <mesh visible={false}>
-          <boxGeometry args={[2.2, 0.2, 5.0]} />
-        </mesh>
-      </RigidBody>
-
-      <RigidBody type="fixed" colliders="cuboid" position={[-3.2, 3.2, 1.0]} rotation={[0, 0, 0.55]}>
-        <mesh visible={false}>
-          <boxGeometry args={[5.0, 0.2, 2.2]} />
-        </mesh>
-      </RigidBody>
+      <primitive
+        object={modelGroup}
+        userData={{ inspectData }}
+        onClick={handleInspect}
+        onPointerOver={(e: { stopPropagation: () => void }) => {
+          e.stopPropagation();
+          document.body.style.cursor = 'pointer';
+        }}
+        onPointerOut={() => {
+          document.body.style.cursor = 'auto';
+        }}
+      />
     </group>
   );
 };

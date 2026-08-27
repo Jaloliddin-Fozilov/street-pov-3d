@@ -13,21 +13,24 @@ export const SceneCanvas: React.FC = () => {
   const bloom = useSettingsStore((s) => s.bloom);
   const quality = useSettingsStore((s) => s.quality);
 
-  const dpr = quality === 'low' ? 1 : quality === 'medium' ? 1.5 : Math.min(window.devicePixelRatio, 2);
+  // Optimized DPR (Prevents lagging on 4K/Retina displays)
+  const dpr = quality === 'low' ? 1.0 : quality === 'medium' ? 1.0 : Math.min(window.devicePixelRatio, 1.35);
 
   return (
     <Canvas
-      shadows
+      shadows={quality === 'high'}
       dpr={dpr}
       camera={{
         fov: fov,
         near: 0.1,
-        far: 450,
+        far: 350,
         position: [0, 1.8, 0],
       }}
       gl={{
-        antialias: quality !== 'low',
+        antialias: quality === 'high',
         powerPreference: 'high-performance',
+        stencil: false,
+        depth: true,
       }}
       className="w-full h-full"
     >
@@ -46,16 +49,16 @@ export const SceneCanvas: React.FC = () => {
         <WorldManager />
       </Physics>
 
-      {/* 4. Cinematic Post-Processing */}
-      {bloom && quality !== 'low' && (
+      {/* 4. Lightweight Post-Processing */}
+      {bloom && quality === 'high' && (
         <EffectComposer enableNormalPass={false} multisampling={0}>
           <Bloom
-            luminanceThreshold={0.8}
-            luminanceSmoothing={0.4}
-            intensity={1.2}
+            luminanceThreshold={0.85}
+            luminanceSmoothing={0.3}
+            intensity={0.8}
             mipmapBlur
           />
-          <Vignette eskil={false} offset={0.1} darkness={0.6} />
+          <Vignette eskil={false} offset={0.1} darkness={0.5} />
         </EffectComposer>
       )}
     </Canvas>
