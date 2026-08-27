@@ -5,11 +5,11 @@ export const CHUNK_SIZE = 80;
 
 // Generates 100+ structured, connected streets on a 10x10 to 12x10 interconnected road grid
 const rawStreetNames: { name: string; district: string; desc: string; hist: string }[] = [
-  { name: "Amir Temur shox ko'chasi", district: "Yunusobod", desc: "Bibixonim jome masjidi maydoni va Toshkentning eng markaziy shoh ko'chasi.", hist: "19-asrdan boshlab rivojlangan, shahar markazidan shimolga tomon yo'nalgan." },
+  { name: "Amir Temur shox ko'chasi", district: "Yunusobod", desc: "Toshkentning eng markaziy va gavjum shoh ko'chalaridan biri.", hist: "19-asrdan boshlab rivojlangan, shahar markazidan shimolga tomon yo'nalgan." },
   { name: "Islom Karimov shoh ko'chasi", district: "Mirobod", desc: "Oliy Majlis Qonunchilik Palatasi saroyi va davlat arxitekturasi xiyoboni.", hist: "O'zbekistonning zamonaviy davlat boshqaruvi markazlaridan biri." },
   { name: "Osiyo ko'chasi (Xalqaro Kvartal)", district: "Yunusobod", desc: "Tokio me'moriy majmuasi, terrasalari va savdo galereyalari joylashgan ko'cha.", hist: "Yangi O'zbekistonning zamonaviy xalqaro arxitektura durdonasi." },
   { name: "Mustaqillik shoh ko'chasi", district: "Mirzo Ulug'bek", desc: "Keng xiyobonlar va ma'muriy binolar joylashgan ko'cha.", hist: "Mustaqillik maydoni bilan bog'langan eng mashhur shoh ko'cha." },
-  { name: "Navoiy shoh ko'chasi", district: "Shayxontohur", desc: "Alisher Navoiy nomidagi teatr va qadimiy obidalar ko'chasi.", hist: "Toshkent madaniy hayotining tarixiy yuragi hisoblanadi." },
+  { name: "Navoiy shoh ko'chasi", district: "Shayxontohur", desc: "Alisher Navoiy nomidagi teatr va madaniy maskanlar ko'chasi.", hist: "Toshkent madaniy hayotining tarixiy yuragi hisoblanadi." },
   { name: "Sharaf Rashidov ko'chasi", district: "Yunusobod", desc: "Markaziy bog'lar, muzeylar va kutubxonalar bo'ylab o'tadi.", hist: "Yashil xiyobonlari va tarixiy arxitekturasi bilan ajralib turadi." },
   { name: "Oybek ko'chasi", district: "Mirobod", desc: "Ko'plab kafelar, biznes markazlari va restoranlar joylashgan gavjum ko'cha.", hist: "Yozuvchi Muso Toshmuhammad o'g'li Oybek sharafiga nomlangan." },
   { name: "Nukus ko'chasi", district: "Mirobod", desc: "Elchixonalar va zamonaviy turar-joy majmualari joylashgan ko'cha.", hist: "Toshkentning Kichik halqa yo'li bilan bog'lovchi asosiy arteriyalardan biri." },
@@ -74,20 +74,7 @@ for (let gridX = -5; gridX < 5; gridX++) {
     const pois: POIData[] = [];
     
     // Special Landmark POIs for dedicated streets
-    if (gridX === 0 && gridZ === 0) {
-      pois.push({
-        id: `poi_bibi_khanym`,
-        name: "Bibixonim Jome Masjidi",
-        category: 'landmark',
-        description: "XIV asr me'moriy durdonasi, Amir Temur tomonidan barpo etilgan ulug'vor moviy gumbazli jome masjidi.",
-        fullHistory: "1399-1404 yillarda bunyod etilgan. O'rta asrlar sharq me'morchiligining eng yuksak cho'qqilaridan biri.",
-        position: [worldX + 24, 0, worldZ + 24],
-        streetId: streetId,
-        hours: "08:00 - 20:00",
-        rating: 5.0,
-        imageUrl: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=600&q=80"
-      });
-    } else if (gridX === 0 && gridZ === 1) {
+    if (gridX === 0 && gridZ === 1) {
       pois.push({
         id: `poi_oliy_majlis`,
         name: "Oliy Majlis Qonunchilik Palatasi Binosi",
