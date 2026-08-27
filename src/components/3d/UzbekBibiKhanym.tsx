@@ -29,8 +29,11 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
 
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        child.castShadow = false; // Disable expensive dynamic shadows for smooth FPS
+        child.castShadow = false; // Disable heavy shadow maps for maximum 60 FPS
         child.receiveShadow = true;
+        if (child.material) {
+          child.material.roughness = 0.8;
+        }
       }
     });
 
@@ -40,16 +43,19 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
     const center = new THREE.Vector3();
     bbox.getCenter(center);
 
-    // Target Height: 22 meters
-    const TARGET_HEIGHT = 22.0;
-    const rawHeight = size.y > 0.001 ? size.y : 1;
-    const autoScale = TARGET_HEIGHT / rawHeight;
+    // Target monumental height: 18 meters
+    // Photogrammetry model ground level is located around raw Y = -1.0 (with underground noise down to -17.9)
+    const RAW_GROUND_Y = -1.0;
+    const RAW_TOP_Y = bbox.max.y > 0 ? bbox.max.y : 35.6;
+    const modelHeight = RAW_TOP_Y - RAW_GROUND_Y;
+    const TARGET_HEIGHT = 18.0;
+    const autoScale = TARGET_HEIGHT / (modelHeight > 0.1 ? modelHeight : 1);
 
     const group = new THREE.Group();
-    // Center squarely and plant base firmly on the ground level (Y=0)
+    // Center horizontally and align courtyard / entrance ground plane squarely at ground Y = 0
     cloned.position.set(
       -center.x * autoScale,
-      -bbox.min.y * autoScale - 0.2, // Firmly connect to ground/sidewalk
+      -RAW_GROUND_Y * autoScale,
       -center.z * autoScale
     );
     cloned.scale.set(autoScale, autoScale, autoScale);
@@ -67,7 +73,7 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
     streetName: currentStreet?.name,
     details: [
       { label: "Asos solingan davr", value: "1399-1404 yillar" },
-      { label: "Balandligi", value: "36 metr (Ulkan peshtoq)" },
+      { label: "Balandligi", value: "36 metr (Tarixiy peshtoq)" },
       { label: "Me'moriy uslub", value: "Temuriylar davri feruza mozaikasi" },
       { label: "UNESCO maqomi", value: "Butunjahon merosi ro'yxatida" },
       { label: "Manba", value: "Global Digital Heritage Photogrammetry 3D" },
@@ -82,16 +88,19 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      {/* Lightweight Compound Physics Collider */}
+      {/* 
+        High-Performance Compound Colliders 
+        (Allows walk-through archway without polygon physics lag)
+      */}
       <RigidBody type="fixed" colliders={false}>
-        {/* Left Portal Pylon Pillar */}
-        <CuboidCollider args={[3.2, 11, 4]} position={[-9, 11, 0]} />
-        {/* Right Portal Pylon Pillar */}
-        <CuboidCollider args={[3.2, 11, 4]} position={[9, 11, 0]} />
+        {/* Left Portal Pylon */}
+        <CuboidCollider args={[2.5, 9, 3]} position={[-7.5, 9, 0]} />
+        {/* Right Portal Pylon */}
+        <CuboidCollider args={[2.5, 9, 3]} position={[7.5, 9, 0]} />
         {/* Arch Header Above Walkway */}
-        <CuboidCollider args={[5.8, 3.5, 3]} position={[0, 18.5, 0]} />
+        <CuboidCollider args={[5.0, 3, 2.5]} position={[0, 15, 0]} />
         {/* Back Dome & Mosque Body */}
-        <CuboidCollider args={[14, 11, 8]} position={[0, 11, -12]} />
+        <CuboidCollider args={[11, 9, 7]} position={[0, 9, -10]} />
       </RigidBody>
 
       <primitive
