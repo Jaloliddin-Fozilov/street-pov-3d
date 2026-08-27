@@ -31,7 +31,7 @@ export const ImportedTokyoBuilding: React.FC<TokyoBuildingProps> = ({
 
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        child.castShadow = true;
+        child.castShadow = false; // Disable heavy shadow calculations
         child.receiveShadow = true;
       }
     });
@@ -48,10 +48,10 @@ export const ImportedTokyoBuilding: React.FC<TokyoBuildingProps> = ({
     const autoScale = TARGET_HEIGHT / rawHeight;
 
     const group = new THREE.Group();
-    // Center model squarely and place base at Y=0
+    // Center model squarely and place base at Y=0 ground level
     cloned.position.set(
       -center.x * autoScale,
-      -bbox.min.y * autoScale,
+      -bbox.min.y * autoScale - 0.1,
       -center.z * autoScale
     );
     cloned.scale.set(autoScale, autoScale, autoScale);
@@ -84,9 +84,7 @@ export const ImportedTokyoBuilding: React.FC<TokyoBuildingProps> = ({
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      {/* 
-        High-Speed Lightweight Physics Colliders
-      */}
+      {/* High-Speed Lightweight Compound Physics Colliders */}
       <RigidBody type="fixed" colliders={false}>
         {/* Main Base & Ground Shops */}
         <CuboidCollider args={[6.5, 2.5, 6.5]} position={[0, 2.5, 0]} />

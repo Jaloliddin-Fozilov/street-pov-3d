@@ -26,8 +26,9 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
 
   const isCenterChunk = chunkX === 0 && chunkZ === 0;
 
+  // Lightweight vehicle placement (avoids overloading scene with hundreds of cloned models)
   const vehicles = useMemo(() => {
-    const seed = (chunkX * 9301 + chunkZ * 49297) % 233280;
+    const seed = Math.abs(chunkX * 9301 + chunkZ * 49297) % 233280;
     const vList: {
       pos: [number, number, number];
       rotY: number;
@@ -35,38 +36,27 @@ export const StreetChunk: React.FC<StreetChunkProps> = ({ chunkX, chunkZ }) => {
       color: string;
     }[] = [];
 
-    // North-South Lane Vehicles
-    vList.push({
-      pos: [worldX + 3.2, 0, worldZ - 16],
-      rotY: 0,
-      type: (seed % 5 === 0 ? 'bus' : seed % 3 === 0 ? 'taxi' : 'sedan'),
-      color: CAR_COLORS[Math.abs(seed) % CAR_COLORS.length],
-    });
+    // Place vehicles selectively
+    if (isCenterChunk || seed % 2 === 0) {
+      vList.push({
+        pos: [worldX + 3.2, 0, worldZ - 14],
+        rotY: 0,
+        type: (seed % 3 === 0 ? 'taxi' : 'sedan'),
+        color: CAR_COLORS[seed % CAR_COLORS.length],
+      });
+    }
 
-    vList.push({
-      pos: [worldX - 3.2, 0, worldZ + 20],
-      rotY: Math.PI,
-      type: (seed % 4 === 0 ? 'suv' : 'sedan'),
-      color: CAR_COLORS[Math.abs(seed + 3) % CAR_COLORS.length],
-    });
-
-    // East-West Lane Vehicles
-    vList.push({
-      pos: [worldX + 22, 0, worldZ + 3.2],
-      rotY: Math.PI / 2,
-      type: (seed % 2 === 0 ? 'taxi' : 'suv'),
-      color: CAR_COLORS[Math.abs(seed + 7) % CAR_COLORS.length],
-    });
-
-    vList.push({
-      pos: [worldX - 20, 0, worldZ - 3.2],
-      rotY: -Math.PI / 2,
-      type: (seed % 6 === 0 ? 'bus' : 'sedan'),
-      color: CAR_COLORS[Math.abs(seed + 11) % CAR_COLORS.length],
-    });
+    if (isCenterChunk || seed % 3 === 0) {
+      vList.push({
+        pos: [worldX - 16, 0, worldZ - 3.2],
+        rotY: -Math.PI / 2,
+        type: (seed % 5 === 0 ? 'bus' : 'sedan'),
+        color: CAR_COLORS[(seed + 4) % CAR_COLORS.length],
+      });
+    }
 
     return vList;
-  }, [chunkX, chunkZ, worldX, worldZ]);
+  }, [chunkX, chunkZ, worldX, worldZ, isCenterChunk]);
 
   return (
     <group key={`chunk-${chunkX}-${chunkZ}`}>

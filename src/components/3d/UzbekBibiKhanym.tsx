@@ -29,7 +29,7 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
 
     cloned.traverse((child) => {
       if (child instanceof THREE.Mesh) {
-        child.castShadow = true;
+        child.castShadow = false; // Disable expensive dynamic shadows for smooth FPS
         child.receiveShadow = true;
       }
     });
@@ -40,15 +40,16 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
     const center = new THREE.Vector3();
     bbox.getCenter(center);
 
-    // Target Height: 24 meters
-    const TARGET_HEIGHT = 24.0;
+    // Target Height: 22 meters
+    const TARGET_HEIGHT = 22.0;
     const rawHeight = size.y > 0.001 ? size.y : 1;
     const autoScale = TARGET_HEIGHT / rawHeight;
 
     const group = new THREE.Group();
+    // Center squarely and plant base firmly on the ground level (Y=0)
     cloned.position.set(
       -center.x * autoScale,
-      -bbox.min.y * autoScale,
+      -bbox.min.y * autoScale - 0.2, // Firmly connect to ground/sidewalk
       -center.z * autoScale
     );
     cloned.scale.set(autoScale, autoScale, autoScale);
@@ -81,22 +82,18 @@ export const UzbekBibiKhanym: React.FC<BibiKhanymProps> = ({
 
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
-      {/* 
-        High-Performance Compound Cuboid Colliders 
-        (Allows walk-through archway without 100k polygon trimesh lag)
-      */}
+      {/* Lightweight Compound Physics Collider */}
       <RigidBody type="fixed" colliders={false}>
         {/* Left Portal Pylon Pillar */}
-        <CuboidCollider args={[3.2, 12, 4]} position={[-9, 12, 0]} />
+        <CuboidCollider args={[3.2, 11, 4]} position={[-9, 11, 0]} />
         {/* Right Portal Pylon Pillar */}
-        <CuboidCollider args={[3.2, 12, 4]} position={[9, 12, 0]} />
+        <CuboidCollider args={[3.2, 11, 4]} position={[9, 11, 0]} />
         {/* Arch Header Above Walkway */}
-        <CuboidCollider args={[5.8, 4, 3]} position={[0, 20, 0]} />
+        <CuboidCollider args={[5.8, 3.5, 3]} position={[0, 18.5, 0]} />
         {/* Back Dome & Mosque Body */}
-        <CuboidCollider args={[14, 12, 8]} position={[0, 12, -12]} />
+        <CuboidCollider args={[14, 11, 8]} position={[0, 11, -12]} />
       </RigidBody>
 
-      {/* Render 3D Monument */}
       <primitive
         object={modelGroup}
         userData={{ inspectData }}

@@ -8,7 +8,8 @@ import { InspectableObject } from '../../types';
 export const InteractionRaycaster: React.FC = () => {
   const { camera, scene } = useThree();
   const raycaster = useRef(new THREE.Raycaster());
-  const centerCoord = useRef(new THREE.Vector2(0, 0)); // Center of screen (crosshair)
+  const centerCoord = useRef(new THREE.Vector2(0, 0)); // Center of screen
+  const lastCheckTime = useRef(0);
 
   const setHoveredObject = useWorldStore((s) => s.setHoveredObject);
   const setInspectedObject = useWorldStore((s) => s.setInspectedObject);
@@ -33,11 +34,8 @@ export const InteractionRaycaster: React.FC = () => {
     };
 
     const handlePointerDown = (e: MouseEvent) => {
-      // Only if clicked on canvas / viewport and pointer locked
-      if (document.pointerLockElement) {
-        if (e.button === 0) { // Left click
-          handleTriggerInspect();
-        }
+      if (document.pointerLockElement && e.button === 0) {
+        handleTriggerInspect();
       }
     };
 
@@ -50,21 +48,34 @@ export const InteractionRaycaster: React.FC = () => {
     };
   }, [setInspectedObject]);
 
-  // Frame-by-frame center crosshair raycasting
-  useFrame(() => {
+  // Throttled high-efficiency raycasting (runs every 100ms instead of 60 times/sec on 50,000 submeshes)
+  useFrame(({ clock }) => {
     if (!camera || !scene) return;
+
+    const now = clock.getElapsedTime();
+    if (now - lastCheckTime.current < 0.1) return; // 10Hz throttle (saves 90% CPU)
+    lastCheckTime.current = now;
 
     // Raycast from camera center
     raycaster.current.setFromCamera(centerCoord.current, camera);
-    raycaster.current.far = 40; // 40m interaction distance
+    raycaster.current.far = 35; // 35m interaction distance
 
-    const intersects = raycaster.current.intersectObjects(scene.children, true);
+    // Collect inspectable root candidates in nearby range
+    const inspectableMeshes: THREE.Object3D[] = [];
+    scene.traverse((obj) => {
+      if (obj.userData && obj.userData.inspectData) {
+        inspectableMeshes.push(obj);
+      }
+    });
+
+    if (inspectableMeshes.length === 0) return;
+
+    const intersects = raycaster.current.intersectObjects(inspectableMeshes, true);
 
     let foundInspectData: InspectableObject | null = null;
 
-    for (const hit of intersects) {
-      // Ignore road ground plane or sky
-      let currentObj: THREE.Object3D | null = hit.object;
+    if (intersects.length > 0) {
+      let currentObj: THREE.Object3D | null = intersects[0].object;
       while (currentObj) {
         if (currentObj.userData && currentObj.userData.inspectData) {
           foundInspectData = currentObj.userData.inspectData as InspectableObject;
@@ -72,7 +83,6 @@ export const InteractionRaycaster: React.FC = () => {
         }
         currentObj = currentObj.parent;
       }
-      if (foundInspectData) break;
     }
 
     const currentHovered = useWorldStore.getState().hoveredObject;
